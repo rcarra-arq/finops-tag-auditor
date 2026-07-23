@@ -15,7 +15,7 @@ first things a FinOps practitioner needs to fix.
 > **Work in progress.** The tag-checking logic works against sample data.
 > Reading real resources from AWS (read-only, via `boto3`) is the next step.
 
-## Why this exists
+## Objectives:
 
 This is the **enforcement** side of tagging. In my
 [AWS high-availability project](https://github.com/rcarra-arq/aws-highly-available-webapp-terraform)
@@ -24,7 +24,7 @@ actually landed on every resource — including the tricky case of instances
 launched at runtime by an Auto Scaling Group, which don't inherit the
 provider's default tags. Same "trust, but verify" idea as my S3 backup verifier.
 
-## What it does today
+## What it does 
 
 Given a list of resources and their tags, it reports which required tags are
 missing, one line per resource:
@@ -35,7 +35,7 @@ FALTA bucket-teste-antigo -> faltam: ['Project', 'Environment', 'Owner']
 FALTA vol-do-servidor -> faltam: ['Owner']
 ```
 
-## Run it
+## How to run
 
 ```bash
 python auditor.py
