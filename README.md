@@ -1,6 +1,8 @@
 ![Python](https://img.shields.io/badge/Python-Script-3776AB)
 ![FinOps](https://img.shields.io/badge/FinOps-Tag_Governance-2ea44f)
 ![AWS](https://img.shields.io/badge/AWS-boto3-orange)
+
+
 ![Status](https://img.shields.io/badge/status-work_in_progress-yellow)
 
 # FinOps Tag Auditor 
