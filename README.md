@@ -3,14 +3,14 @@
 ![AWS](https://img.shields.io/badge/AWS-boto3-orange)
 ![Status](https://img.shields.io/badge/status-work_in_progress-yellow)
 
-# FinOps Tag Auditor 🚧
+# FinOps Tag Auditor 
 
 A small Python tool that scans cloud resources and flags the ones **missing
 required cost-allocation tags** (`Project`, `Environment`, `Owner`). Untagged
 resources are cost that can't be attributed to a team or project — one of the
 first things a FinOps practitioner needs to fix.
 
-> 🚧 **Work in progress.** The tag-checking logic works against sample data.
+> **Work in progress.** The tag-checking logic works against sample data.
 > Reading real resources from AWS (read-only, via `boto3`) is the next step.
 
 ## Why this exists
