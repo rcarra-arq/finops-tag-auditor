@@ -1,0 +1,4 @@
+# Pastas de cache que o Python e o pytest criam ao rodar.
+# Sao geradas automaticamente e nao devem ir para o repositorio.
+__pycache__/
+.pytest_cache/

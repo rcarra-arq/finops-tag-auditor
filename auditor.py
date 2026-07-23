@@ -1,26 +1,28 @@
-# Um EXEMPLO de recursos, no espirito do que a AWS devolve.
-# Cada recurso tem um nome e um conjunto de tags.
-recursos = [
-    {"nome": "bucket-acervo-fotos", "tags": {"Project": "acervo", "Environment": "prod", "Owner": "rodrigo"}},
-    {"nome": "bucket-teste-antigo", "tags": {}},
-    {"nome": "vol-do-servidor",     "tags": {"Project": "acervo", "Environment": "prod"}},
-]
-
-# A "checklist": as tags que TODO recurso deveria ter.
-tags_obrigatorias = ["Project", "Environment", "Owner"]
-
-# Laco de fora: passa por cada recurso.
-for recurso in recursos:
-    # Comeca com uma lista VAZIA; vamos guardar aqui as tags que faltam.
+# A funcao: recebe UM recurso e a lista de tags obrigatorias,
+# e DEVOLVE a lista das tags que estao faltando nesse recurso.
+def tags_faltando(recurso, obrigatorias):
     faltando = []
-
-    # Laco de dentro: se a tag NAO esta no recurso, adiciona na lista.
-    for tag in tags_obrigatorias:
+    for tag in obrigatorias:
         if tag not in recurso["tags"]:
             faltando.append(tag)
+    return faltando
 
-    # Decide o que imprimir com base no que sobrou em "faltando".
-    if faltando:
-        print("FALTA", recurso["nome"], "-> faltam:", faltando)
-    else:
-        print("OK   ", recurso["nome"])
+
+# Este bloco so roda quando voce EXECUTA o arquivo (python auditor.py).
+# Quando outro arquivo IMPORTA este (como o teste vai fazer), ele NAO roda.
+if __name__ == "__main__":
+    # Um EXEMPLO de recursos, no espirito do que a AWS devolve.
+    recursos = [
+        {"nome": "bucket-acervo-fotos", "tags": {"Project": "acervo", "Environment": "prod", "Owner": "rodrigo"}},
+        {"nome": "bucket-teste-antigo", "tags": {}},
+        {"nome": "vol-do-servidor",     "tags": {"Project": "acervo", "Environment": "prod"}},
+    ]
+
+    tags_obrigatorias = ["Project", "Environment", "Owner"]
+
+    for recurso in recursos:
+        faltando = tags_faltando(recurso, tags_obrigatorias)
+        if faltando:
+            print("FALTA", recurso["nome"], "-> faltam:", faltando)
+        else:
+            print("OK   ", recurso["nome"])

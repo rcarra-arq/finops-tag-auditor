@@ -1,0 +1,23 @@
+name: tests
+
+# Quando rodar: a cada push e a cada pull request.
+on: [push, pull_request]
+
+jobs:
+  test:
+    # O GitHub liga um computador Linux novinho so pra isso.
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Baixa o seu codigo para dentro desse computador.
+      - uses: actions/checkout@v4
+
+      # 2. Instala o Python nele.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # 3. Instala a ferramenta de teste.
+      - run: pip install pytest
+
+      # 4. Roda os testes. Se algum falhar, o check fica vermelho.
+      - run: python -m pytest
