@@ -15,7 +15,7 @@ first things a FinOps practitioner needs to fix.
 > **Work in progress.** The tag-checking logic works against sample data.
 > Reading real resources from AWS (read-only, via `boto3`) is the next step.
 
-## Objectives:
+## Motivation
 
 This is the **enforcement** side of tagging. In my
 [AWS high-availability project](https://github.com/rcarra-arq/aws-highly-available-webapp-terraform)
