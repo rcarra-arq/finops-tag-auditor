@@ -12,8 +12,8 @@ required cost-allocation tags** (`Project`, `Environment`, `Owner`). Untagged
 resources are cost that can't be attributed to a team or project — one of the
 first things a FinOps practitioner needs to fix.
 
-> **Work in progress.** The tag-checking logic works against sample data.
-> Reading real resources from AWS (read-only, via `boto3`) is the next step.
+> **Work in progress.** Runs against built-in sample data by default, and can
+> read real resources from AWS (read-only, via `boto3`) with `--source aws`.
 
 ## Motivation
 
@@ -37,16 +37,49 @@ FALTA vol-do-servidor -> faltam: ['Owner']
 
 ## How to run
 
+Install dependencies once:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run against the built-in sample data (no AWS credentials needed):
+
 ```bash
 python auditor.py
 ```
 
+Run against your real AWS account (read-only):
+
+```bash
+python auditor.py --source aws
+```
+
+### Exit codes
+
+The tool is meant to run in a pipeline, so it signals its result via the exit code:
+
+| Code | Meaning |
+|------|---------|
+| `0`  | All resources compliant |
+| `1`  | Found resources missing required tags (a CI step can fail the build) |
+| `2`  | The tool could not run (missing AWS permission or credentials) |
+
+### AWS permissions
+
+`--source aws` uses the Resource Groups Tagging API and needs a **dedicated
+read-only identity** — not an operational user. The minimum policy it requires
+is in [`docs/iam-policy.json`](docs/iam-policy.json). Read access to S3 alone is
+*not* enough: listing tags is a separate permission (`tag:GetResources`).
+
 ## Roadmap
 
 - [x] Core check: required tags per resource, one-line report
-- [ ] Read real resources from AWS (`boto3`, dedicated read-only IAM identity)
-- [ ] Summary counts (compliant vs. non-compliant)
-- [ ] Configurable required-tag list
+- [x] Read real resources from AWS (`boto3`, dedicated read-only IAM identity)
+- [x] Summary counts (compliant vs. non-compliant)
+- [x] CI-friendly exit codes
+- [ ] Configurable required-tag list (flag / config file)
+- [ ] Machine-readable output (`--format json|csv`)
 
 ---
 

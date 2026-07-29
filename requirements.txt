@@ -1,0 +1,5 @@
+# Dependencias do projeto.
+# boto3 = SDK da AWS para Python (usado so no modo --source aws).
+# pytest = ferramenta que roda os testes.
+boto3
+pytest
