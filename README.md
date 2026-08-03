@@ -55,6 +55,8 @@ Run against your real AWS account (read-only):
 python auditor.py --source aws
 ```
 
+![First run against a real AWS account — 2 resources scanned, both flagged as missing the required tags](docs/screenshots/aws-audit-first-run.png)
+
 ### Exit codes
 
 The tool is meant to run in a pipeline, so it signals its result via the exit code:
