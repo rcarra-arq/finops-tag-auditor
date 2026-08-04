@@ -19,6 +19,9 @@ def recursos_de_exemplo():
         {"nome": "bucket-acervo-fotos", "tags": {"Project": "acervo", "Environment": "prod", "Owner": "rodrigo"}},
         {"nome": "bucket-teste-antigo", "tags": {}},
         {"nome": "vol-do-servidor",     "tags": {"Project": "acervo", "Environment": "prod"}},
+        # Um recurso do servico 'payments' (cartao salvo). A Tagging API lista,
+        # mas a AWS nao deixa colocar tags -> falsa positiva sem --exclude-service.
+        {"nome": "arn:aws:payments::123456789012:payment-instrument/exemplo", "tags": {}},
     ]
 
 
@@ -44,6 +47,32 @@ def recursos_da_aws():
             tags = {t["Key"]: t["Value"] for t in item["Tags"]}
             recursos.append({"nome": item["ResourceARN"], "tags": tags})
     return recursos
+
+
+# Le o "servico" de dentro de um ARN da AWS.
+# Um ARN tem o formato: arn:particao:servico:regiao:conta:recurso
+# O servico e sempre o 3o campo. Nomes que NAO sao ARN (o modo sample usa
+# nomes simples, tipo "bucket-antigo") nao tem servico -> devolvemos None.
+def servico_do_arn(nome):
+    partes = nome.split(":")
+    if len(partes) >= 3 and partes[0] == "arn":
+        return partes[2]
+    return None
+
+
+# Remove da lista os recursos cujo servico esta na lista de excluidos.
+# Serve para casos como 'payments' (cartao de credito salvo): a Tagging API
+# lista esses recursos, mas a AWS nao deixa colocar tags neles -> seriam
+# falsas positivas eternas no relatorio.
+def filtrar_por_servico(recursos, servicos_excluidos):
+    if not servicos_excluidos:
+        return recursos  # nada a excluir: devolve tudo como veio
+    filtrados = []
+    for recurso in recursos:
+        if servico_do_arn(recurso["nome"]) in servicos_excluidos:
+            continue  # pula este recurso
+        filtrados.append(recurso)
+    return filtrados
 
 
 # Roda a auditoria em cima de uma lista de recursos e imprime o relatorio.
@@ -72,9 +101,24 @@ if __name__ == "__main__":
         default="sample",
         help="De onde ler os recursos: 'sample' (exemplo fixo, padrao) ou 'aws' (conta real).",
     )
+    parser.add_argument(
+        "--required-tags",
+        nargs="+",
+        default=["Project", "Environment", "Owner"],
+        metavar="TAG",
+        help="Tags obrigatorias a exigir (padrao: Project Environment Owner).",
+    )
+    parser.add_argument(
+        "--exclude-service",
+        nargs="+",
+        default=[],
+        metavar="SERVICO",
+        help="Servicos AWS a ignorar (ex: payments). Util para recursos que a "
+        "Tagging API lista mas que nao aceitam tags.",
+    )
     args = parser.parse_args()
 
-    tags_obrigatorias = ["Project", "Environment", "Owner"]
+    tags_obrigatorias = args.required_tags
 
     if args.source == "aws":
         # Ler da AWS pode falhar por falta de permissao ou de credencial.
@@ -90,6 +134,9 @@ if __name__ == "__main__":
             sys.exit(2)  # 2 = erro da ferramenta (diferente de 'achou problema')
     else:
         recursos = recursos_de_exemplo()
+
+    # Tira da jogada os servicos que o usuario mandou ignorar (ex: payments).
+    recursos = filtrar_por_servico(recursos, args.exclude_service)
 
     problemas = auditar(recursos, tags_obrigatorias)
 
