@@ -55,6 +55,13 @@ Run against your real AWS account (read-only):
 python auditor.py --source aws
 ```
 
+Require a different set of tags, or skip services that can't be tagged:
+
+```bash
+python auditor.py --required-tags Project Owner CostCenter
+python auditor.py --source aws --exclude-service payments
+```
+
 ![First run against a real AWS account — 2 resources scanned, both flagged as missing the required tags](docs/screenshots/aws-audit-first-run.png)
 
 ### Exit codes
@@ -74,13 +81,28 @@ read-only identity** — not an operational user. The minimum policy it requires
 is in [`docs/iam-policy.json`](docs/iam-policy.json). Read access to S3 alone is
 *not* enough: listing tags is a separate permission (`tag:GetResources`).
 
+## Known limitations
+
+These come from the AWS Resource Groups Tagging API itself, not from the tool:
+
+- **Some services are listed but can't be tagged.** The API returns resources
+  from the `payments` service (a saved credit card, `payment-instrument`), but
+  AWS doesn't allow tags on them — so they always show up as non-compliant.
+  Skip them with `--exclude-service payments`.
+- **Never-tagged S3 buckets don't appear.** The Tagging API only returns a
+  bucket once it has had at least one tag. A bucket that was never tagged is
+  simply absent from the audit — check it with
+  `aws s3api get-bucket-tagging --bucket <name>` before assuming a permissions
+  problem.
+
 ## Roadmap
 
 - [x] Core check: required tags per resource, one-line report
 - [x] Read real resources from AWS (`boto3`, dedicated read-only IAM identity)
 - [x] Summary counts (compliant vs. non-compliant)
 - [x] CI-friendly exit codes
-- [ ] Configurable required-tag list (flag / config file)
+- [x] Configurable required-tag list (`--required-tags` flag)
+- [x] Skip services that can't be tagged (`--exclude-service` flag)
 - [ ] Machine-readable output (`--format json|csv`)
 
 ---
