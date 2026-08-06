@@ -105,7 +105,7 @@ These come from the AWS Resource Groups Tagging API itself, not from the tool:
 - [x] CI-friendly exit codes
 - [x] Configurable required-tag list (`--required-tags` flag)
 - [x] Skip services that can't be tagged (`--exclude-service` flag)
-- [ ] Machine-readable output (`--format json|csv`)
+- [x] Machine-readable output (`--format json|csv`)
 
 *A study and portfolio project, built step by step while I learn Python and
 FinOps hands-on.*
@@ -217,7 +217,7 @@ Estas vêm da própria AWS Resource Groups Tagging API, não da ferramenta:
 - [x] Códigos de saída amigáveis a CI
 - [x] Lista de tags obrigatórias configurável (flag `--required-tags`)
 - [x] Ignorar serviços que não podem ser tagueados (flag `--exclude-service`)
-- [ ] Saída legível por máquina (`--format json|csv`)
+- [x] Saída legível por máquina (`--format json|csv`)
 
 ---
 

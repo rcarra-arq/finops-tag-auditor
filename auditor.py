@@ -1,4 +1,6 @@
 import argparse
+import csv
+import json
 import sys
 
 
@@ -75,18 +77,42 @@ def filtrar_por_servico(recursos, servicos_excluidos):
     return filtrados
 
 
-# Roda a auditoria em cima de uma lista de recursos e imprime o relatorio.
-# DEVOLVE quantos recursos estao fora de conformidade (para virar exit code).
-def auditar(recursos, obrigatorias):
-    problemas = 0
+# Avalia os recursos e DEVOLVE os resultados como DADOS (uma lista), sem
+# imprimir nada. Separar "calcular" de "mostrar" e o que permite ter varios
+# formatos de saida (texto, json, csv) a partir do MESMO calculo.
+def avaliar(recursos, obrigatorias):
+    resultados = []
     for recurso in recursos:
         faltando = tags_faltando(recurso, obrigatorias)
-        if faltando:
-            print("FALTA", recurso["nome"], "-> faltam:", faltando)
-            problemas += 1
+        resultados.append({"nome": recurso["nome"], "faltando": faltando})
+    return resultados
+
+
+# Mostra os resultados no formato de texto para humano (o de sempre).
+def imprimir_texto(resultados):
+    for r in resultados:
+        if r["faltando"]:
+            print("FALTA", r["nome"], "-> faltam:", r["faltando"])
         else:
-            print("OK   ", recurso["nome"])
-    return problemas
+            print("OK   ", r["nome"])
+
+
+# Mostra os resultados como JSON, um formato que OUTRO programa consegue ler.
+# json.dumps transforma a nossa lista de dicionarios em texto JSON;
+# indent=2 so deixa bonito e legivel (indentado com 2 espacos).
+def formatar_json(resultados):
+    print(json.dumps(resultados, indent=2))
+
+
+# Mostra os resultados como CSV (planilha: linhas e colunas), que abre no Excel.
+def formatar_csv(resultados):
+    # lineterminator="\n" evita linhas em branco duplicadas no Windows.
+    writer = csv.writer(sys.stdout, lineterminator="\n")
+    writer.writerow(["recurso", "tags_faltando"])  # 1a linha = nomes das colunas
+    for r in resultados:
+        # ";".join transforma a lista ["Project","Owner"] no texto "Project;Owner"
+        # (o oposto do .split que usamos em servico_do_arn). Lista vazia -> "".
+        writer.writerow([r["nome"], ";".join(r["faltando"])])
 
 
 # Este bloco so roda quando voce EXECUTA o arquivo (python auditor.py).
@@ -116,6 +142,12 @@ if __name__ == "__main__":
         help="Servicos AWS a ignorar (ex: payments). Util para recursos que a "
         "Tagging API lista mas que nao aceitam tags.",
     )
+    parser.add_argument(
+        "--format",
+        choices=["text", "json", "csv"],
+        default="text",
+        help="Formato da saida: 'text' (humano, padrao), 'json' ou 'csv' (maquina).",
+    )
     args = parser.parse_args()
 
     tags_obrigatorias = args.required_tags
@@ -138,10 +170,28 @@ if __name__ == "__main__":
     # Tira da jogada os servicos que o usuario mandou ignorar (ex: payments).
     recursos = filtrar_por_servico(recursos, args.exclude_service)
 
-    problemas = auditar(recursos, tags_obrigatorias)
+    # 1. CALCULA os resultados (dados), sem mostrar nada ainda.
+    resultados = avaliar(recursos, tags_obrigatorias)
 
-    print()
-    print(f"Resumo: {len(recursos)} recursos, {problemas} fora de conformidade.")
+    # 2. MOSTRA no formato que o usuario pediu.
+    if args.format == "json":
+        formatar_json(resultados)
+    elif args.format == "csv":
+        formatar_csv(resultados)
+    else:
+        imprimir_texto(resultados)
+
+    # Conta quantos estao fora de conformidade (para o resumo e o exit code).
+    problemas = 0
+    for r in resultados:
+        if r["faltando"]:
+            problemas += 1
+
+    # O resumo "para humano" so faz sentido no modo texto. Em json, a saida
+    # tem que ser SO o JSON, senao um programa que for ler quebra.
+    if args.format == "text":
+        print()
+        print(f"Resumo: {len(resultados)} recursos, {problemas} fora de conformidade.")
 
     # Codigos de saida com significado, para o CI/CD saber o que fazer:
     #   0 = tudo certo

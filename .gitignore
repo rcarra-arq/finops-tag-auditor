@@ -2,3 +2,8 @@
 # Sao geradas automaticamente e nao devem ir para o repositorio.
 __pycache__/
 .pytest_cache/
+
+# Arquivos de saida gerados pela propria ferramenta (--format ... > arquivo).
+# Sao resultado de rodar, nao codigo-fonte -> nao vao para o repositorio.
+auditoria.json
+auditoria.csv
