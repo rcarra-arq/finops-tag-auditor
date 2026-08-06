@@ -17,14 +17,18 @@ first things a FinOps practitioner needs to fix.
 > **Work in progress.** Runs against built-in sample data by default, and can
 > read real resources from AWS (read-only, via `boto3`) with `--source aws`.
 
-## Motivation
+## My reasons
 
-This is the **enforcement** side of tagging. In my
-[AWS high-availability project](https://github.com/rcarra-arq/aws-highly-available-webapp-terraform)
-I *apply* standardized tags with Terraform; this tool *checks* that they
-actually landed on every resource — including the tricky case of instances
-launched at runtime by an Auto Scaling Group, which don't inherit the
-provider's default tags. Same "trust, but verify" idea as my S3 backup verifier.
+What was behind this idea... I kept imagining: instead of this small scale I'm
+building, how would I find what's missing a tag at real scale? And it would be
+really hard to figure out the cost of each resource on its own. That's why I
+think automating this matters — how do you check thousands at once? If even one
+slips through unnoticed, no one ever finds it. It's like looking for a needle in
+a haystack! In my
+[Terraform repo](https://github.com/rcarra-arq/aws-highly-available-webapp-terraform)
+I applied tags, including the ASG that doesn't inherit them, and I felt the need
+to check whether they were really applied correctly. So I decided to build a
+small version to test it hands-on, which is how I learn best.
 
 ## What it does 
 
@@ -125,15 +129,19 @@ precisa corrigir.
 > **Em desenvolvimento.** Roda com dados de exemplo embutidos por padrão e pode
 > ler recursos reais da AWS (somente leitura, via `boto3`) com `--source aws`.
 
-### Motivação
+### O porquê
 
-Este é o lado da **fiscalização** do tagging. No meu
-[projeto de alta disponibilidade na AWS](https://github.com/rcarra-arq/aws-highly-available-webapp-terraform)
-eu *aplico* tags padronizadas com Terraform; esta ferramenta *verifica* se elas
-realmente chegaram em todos os recursos — incluindo o caso complicado de
-instâncias criadas em tempo de execução por um Auto Scaling Group, que não
-herdam as tags padrão do provider. A mesma ideia de "confie, mas verifique" do
-meu verificador de backup do S3.
+O que estava por trás dessa ideia... eu fiquei imaginando que ao invés dessa
+escala pequena que eu estou montando, como achar o que não tem tag em escala
+real? E ficaria muito difícil de descobrir o custo de cada recurso usado de
+forma separada. Por isso eu acho importante automatizar, como conferir
+milhares de uma só vez? Se passar qualquer uma despercebida, ninguém acha
+mais. É procurar uma agulha no palheiro! No
+[repo do Terraform](https://github.com/rcarra-arq/aws-highly-available-webapp-terraform),
+eu apliquei tags, incluindo a ASG que não herda e senti necessidade de
+conferir se elas realmente foram atribuídas corretamente. Então resolvi
+construir em um formato pequeno para testar na prática, que é como eu aprendo
+melhor.
 
 ### O que ela faz
 
