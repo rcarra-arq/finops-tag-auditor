@@ -5,14 +5,131 @@
 
 ![Status](https://img.shields.io/badge/status-work_in_progress-yellow)
 
-# FinOps Tag Auditor 
+# FinOps Tag Auditor
 
-**🇺🇸 English** · [🇧🇷 Português](#português)
+Uma pequena ferramenta em Python que varre recursos de nuvem e sinaliza os que
+estão **sem as tags obrigatórias de alocação de custo** (`Project`,
+`Environment`, `Owner`). Recurso sem tag é custo que não dá para atribuir a um
+time ou projeto — uma das primeiras coisas que um profissional de FinOps
+precisa corrigir.
 
 A small Python tool that scans cloud resources and flags the ones **missing
 required cost-allocation tags** (`Project`, `Environment`, `Owner`). Untagged
-resources are cost that can't be attributed to a team or project — one of the
-first things a FinOps practitioner needs to fix.
+resources are cost that can't be attributed to a team or project.
+
+🇺🇸 [Full version in English ↓](#english)
+
+## Português
+
+> **Em desenvolvimento.** Roda com dados de exemplo embutidos por padrão e pode
+> ler recursos reais da AWS (somente leitura, via `boto3`) com `--source aws`.
+
+## O porquê
+
+O que estava por trás dessa ideia... eu fiquei imaginando que ao invés dessa
+escala pequena que eu estou montando, como achar o que não tem tag em escala
+real? E ficaria muito difícil de descobrir o custo de cada recurso usado de
+forma separada. Por isso eu acho importante automatizar, como conferir
+milhares de uma só vez? Se passar qualquer uma despercebida, ninguém acha
+mais. É procurar uma agulha no palheiro! No
+[repo do Terraform](https://github.com/rcarra-arq/aws-highly-available-webapp-terraform),
+eu apliquei tags, incluindo a ASG que não herda e senti necessidade de
+conferir se elas realmente foram atribuídas corretamente. Então resolvi
+construir em um formato pequeno para testar na prática, que é como eu aprendo
+melhor.
+
+## O que ela faz
+
+A partir de uma lista de recursos e suas tags, ela informa quais tags
+obrigatórias estão faltando, uma linha por recurso:
+
+```
+OK    bucket-acervo-fotos
+FALTA bucket-teste-antigo -> faltam: ['Project', 'Environment', 'Owner']
+FALTA vol-do-servidor -> faltam: ['Owner']
+```
+
+## Como rodar
+
+Instale as dependências uma vez:
+
+```bash
+pip install -r requirements.txt
+```
+
+Rode com os dados de exemplo embutidos (não precisa de credenciais AWS):
+
+```bash
+python auditor.py
+```
+
+Rode na sua conta AWS real (somente leitura):
+
+```bash
+python auditor.py --source aws
+```
+
+Exija um conjunto diferente de tags, ou ignore serviços que não podem ser
+tagueados:
+
+```bash
+python auditor.py --required-tags Project Owner CostCenter
+python auditor.py --source aws --exclude-service payments
+```
+
+![Primeira execução em uma conta AWS real — 2 recursos escaneados, ambos sinalizados por falta das tags obrigatórias](docs/screenshots/aws-audit-first-run.png)
+
+### Códigos de saída
+
+A ferramenta foi feita para rodar em um pipeline, então sinaliza o resultado
+pelo código de saída:
+
+| Código | Significado |
+|--------|-------------|
+| `0`    | Todos os recursos em conformidade |
+| `1`    | Encontrou recursos sem as tags obrigatórias (um passo de CI pode falhar o build) |
+| `2`    | A ferramenta não conseguiu rodar (falta de permissão ou credenciais AWS) |
+
+### Permissões AWS
+
+`--source aws` usa a Resource Groups Tagging API e precisa de uma **identidade
+dedicada e somente leitura** — não de um usuário operacional. A política mínima
+necessária está em [`docs/iam-policy.json`](docs/iam-policy.json). Ter acesso de
+leitura só ao S3 *não* basta: listar tags é uma permissão separada
+(`tag:GetResources`).
+
+## Limitações conhecidas
+
+Estas vêm da própria AWS Resource Groups Tagging API, não da ferramenta:
+
+- **Alguns serviços aparecem mas não podem ser tagueados.** A API retorna
+  recursos do serviço `payments` (um cartão de crédito salvo,
+  `payment-instrument`), mas a AWS não permite tags neles — então eles sempre
+  aparecem como não conformes. Ignore-os com `--exclude-service payments`.
+- **Buckets S3 que nunca foram tagueados não aparecem.** A Tagging API só
+  retorna um bucket depois que ele teve pelo menos uma tag. Um bucket que nunca
+  foi tagueado simplesmente não aparece na auditoria — verifique com
+  `aws s3api get-bucket-tagging --bucket <nome>` antes de assumir que é problema
+  de permissão.
+
+## Roadmap
+
+- [x] Verificação principal: tags obrigatórias por recurso, relatório de uma linha
+- [x] Ler recursos reais da AWS (`boto3`, identidade IAM dedicada somente leitura)
+- [x] Contagem de resumo (conformes vs. não conformes)
+- [x] Códigos de saída amigáveis a CI
+- [x] Lista de tags obrigatórias configurável (flag `--required-tags`)
+- [x] Ignorar serviços que não podem ser tagueados (flag `--exclude-service`)
+- [x] Saída legível por máquina (`--format json|csv`)
+
+*Projeto de estudo e portfólio, construído passo a passo enquanto aprendo
+Python e FinOps na prática.*
+
+---
+
+## English
+
+🇧🇷 [Versão em português ↑](#finops-tag-auditor)
 
 > **Work in progress.** Runs against built-in sample data by default, and can
 > read real resources from AWS (read-only, via `boto3`) with `--source aws`.
@@ -30,7 +147,7 @@ I applied tags, including the ASG that doesn't inherit them, and I felt the need
 to check whether they were really applied correctly. So I decided to build a
 small version to test it hands-on, which is how I learn best.
 
-## What it does 
+## What it does
 
 Given a list of resources and their tags, it reports which required tags are
 missing, one line per resource:
@@ -113,121 +230,3 @@ These come from the AWS Resource Groups Tagging API itself, not from the tool:
 
 *A study and portfolio project, built step by step while I learn Python and
 FinOps hands-on.*
-
----
-
-## Português
-
-[🇺🇸 English ⬆](#finops-tag-auditor)
-
-Uma pequena ferramenta em Python que varre recursos de nuvem e sinaliza os que
-estão **sem as tags obrigatórias de alocação de custo** (`Project`,
-`Environment`, `Owner`). Recurso sem tag é custo que não dá para atribuir a um
-time ou projeto — uma das primeiras coisas que um profissional de FinOps
-precisa corrigir.
-
-> **Em desenvolvimento.** Roda com dados de exemplo embutidos por padrão e pode
-> ler recursos reais da AWS (somente leitura, via `boto3`) com `--source aws`.
-
-### O porquê
-
-O que estava por trás dessa ideia... eu fiquei imaginando que ao invés dessa
-escala pequena que eu estou montando, como achar o que não tem tag em escala
-real? E ficaria muito difícil de descobrir o custo de cada recurso usado de
-forma separada. Por isso eu acho importante automatizar, como conferir
-milhares de uma só vez? Se passar qualquer uma despercebida, ninguém acha
-mais. É procurar uma agulha no palheiro! No
-[repo do Terraform](https://github.com/rcarra-arq/aws-highly-available-webapp-terraform),
-eu apliquei tags, incluindo a ASG que não herda e senti necessidade de
-conferir se elas realmente foram atribuídas corretamente. Então resolvi
-construir em um formato pequeno para testar na prática, que é como eu aprendo
-melhor.
-
-### O que ela faz
-
-A partir de uma lista de recursos e suas tags, ela informa quais tags
-obrigatórias estão faltando, uma linha por recurso:
-
-```
-OK    bucket-acervo-fotos
-FALTA bucket-teste-antigo -> faltam: ['Project', 'Environment', 'Owner']
-FALTA vol-do-servidor -> faltam: ['Owner']
-```
-
-### Como rodar
-
-Instale as dependências uma vez:
-
-```bash
-pip install -r requirements.txt
-```
-
-Rode com os dados de exemplo embutidos (não precisa de credenciais AWS):
-
-```bash
-python auditor.py
-```
-
-Rode na sua conta AWS real (somente leitura):
-
-```bash
-python auditor.py --source aws
-```
-
-Exija um conjunto diferente de tags, ou ignore serviços que não podem ser
-tagueados:
-
-```bash
-python auditor.py --required-tags Project Owner CostCenter
-python auditor.py --source aws --exclude-service payments
-```
-
-![Primeira execução em uma conta AWS real — 2 recursos escaneados, ambos sinalizados por falta das tags obrigatórias](docs/screenshots/aws-audit-first-run.png)
-
-#### Códigos de saída
-
-A ferramenta foi feita para rodar em um pipeline, então sinaliza o resultado
-pelo código de saída:
-
-| Código | Significado |
-|--------|-------------|
-| `0`    | Todos os recursos em conformidade |
-| `1`    | Encontrou recursos sem as tags obrigatórias (um passo de CI pode falhar o build) |
-| `2`    | A ferramenta não conseguiu rodar (falta de permissão ou credenciais AWS) |
-
-#### Permissões AWS
-
-`--source aws` usa a Resource Groups Tagging API e precisa de uma **identidade
-dedicada e somente leitura** — não de um usuário operacional. A política mínima
-necessária está em [`docs/iam-policy.json`](docs/iam-policy.json). Ter acesso de
-leitura só ao S3 *não* basta: listar tags é uma permissão separada
-(`tag:GetResources`).
-
-### Limitações conhecidas
-
-Estas vêm da própria AWS Resource Groups Tagging API, não da ferramenta:
-
-- **Alguns serviços aparecem mas não podem ser tagueados.** A API retorna
-  recursos do serviço `payments` (um cartão de crédito salvo,
-  `payment-instrument`), mas a AWS não permite tags neles — então eles sempre
-  aparecem como não conformes. Ignore-os com `--exclude-service payments`.
-- **Buckets S3 que nunca foram tagueados não aparecem.** A Tagging API só
-  retorna um bucket depois que ele teve pelo menos uma tag. Um bucket que nunca
-  foi tagueado simplesmente não aparece na auditoria — verifique com
-  `aws s3api get-bucket-tagging --bucket <nome>` antes de assumir que é problema
-  de permissão.
-
-### Roadmap
-
-- [x] Verificação principal: tags obrigatórias por recurso, relatório de uma linha
-- [x] Ler recursos reais da AWS (`boto3`, identidade IAM dedicada somente leitura)
-- [x] Contagem de resumo (conformes vs. não conformes)
-- [x] Códigos de saída amigáveis a CI
-- [x] Lista de tags obrigatórias configurável (flag `--required-tags`)
-- [x] Ignorar serviços que não podem ser tagueados (flag `--exclude-service`)
-- [x] Saída legível por máquina (`--format json|csv`)
-
----
-
-*Projeto de estudo e portfólio, construído passo a passo enquanto aprendo
-Python e FinOps na prática.*
